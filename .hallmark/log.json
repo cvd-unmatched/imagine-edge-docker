@@ -1,0 +1,11 @@
+[
+  {
+    "date": "2026-08-31",
+    "macrostructure": "custom (bespoke)",
+    "theme": "custom",
+    "theme_axes": "dark / mono / warm",
+    "vibe": "Sony Alpha viewfinder HUD, graphite black, amber focus-peaking accent",
+    "enrichment": "none (functional AF-bracket + shutter motif, no decorative imagery)",
+    "brief": "webapp/frontend Camera Sync UI · redesign away from generic AI look toward a Sony camera pairing/viewfinder aesthetic"
+  }
+]

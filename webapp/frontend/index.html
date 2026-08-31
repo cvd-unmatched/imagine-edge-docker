@@ -2,36 +2,70 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<title>Camera Sync</title>
 	<link rel="stylesheet" href="/style.css">
 </head>
 <body>
-	<header>
-		<h1>Camera Sync</h1>
-		<span id="status-badge" class="badge badge-idle">idle</span>
-	</header>
+	<div class="shell">
+		<div class="telemetry">
+			<span class="wordmark"><span class="wordmark__dot" aria-hidden="true"></span>IMAGING EDGE</span>
+			<span class="telemetry__spacer"></span>
+			<span class="telemetry__item" id="tm-iface">IF —</span>
+			<span class="telemetry__item" id="tm-camera">CAM —</span>
+			<span class="telemetry__item" id="tm-ssid">SSID —</span>
+		</div>
 
-	<main>
-		<section class="panel">
-			<button id="pair-btn">Pair &amp; Sync</button>
-			<div id="phase-line" class="phase-line">Ready. Put the camera in "Send to Smartphone" mode, then press Pair.</div>
-			<div class="counts">
-				<span>Downloaded: <strong id="count-downloaded">0</strong></span>
-				<span>Skipped: <strong id="count-skipped">0</strong></span>
-				<span>Seen: <strong id="count-seen">0</strong></span>
+		<section class="viewfinder" aria-label="Pairing status">
+			<div class="stage">
+				<div class="af-frame" id="af-frame" data-state="idle">
+					<span class="af-frame__corner af-frame__corner--tl" aria-hidden="true"></span>
+					<span class="af-frame__corner af-frame__corner--tr" aria-hidden="true"></span>
+					<span class="af-frame__corner af-frame__corner--bl" aria-hidden="true"></span>
+					<span class="af-frame__corner af-frame__corner--br" aria-hidden="true"></span>
+
+					<div class="readout">
+						<span class="readout__state" id="status-word">IDLE</span>
+						<span class="readout__rec" aria-hidden="true"></span>
+					</div>
+					<p class="readout__phase" id="phase-line" aria-live="polite">Ready. Put the camera in “Send to Smartphone” mode, then press Pair.</p>
+				</div>
+
+				<button class="shutter" id="pair-btn" type="button" aria-describedby="phase-line">
+					<span class="shutter__ring" aria-hidden="true"></span>
+					<span class="shutter__label">PAIR</span>
+				</button>
 			</div>
-			<div id="current-file" class="current-file"></div>
-			<ul id="log" class="log"></ul>
+
+			<div class="exposure-row">
+				<div class="exposure">
+					<span class="exposure__label">DOWNLOADED</span>
+					<span class="exposure__value" id="count-downloaded">0</span>
+				</div>
+				<div class="exposure">
+					<span class="exposure__label">SKIPPED</span>
+					<span class="exposure__value" id="count-skipped">0</span>
+				</div>
+				<div class="exposure">
+					<span class="exposure__label">SEEN</span>
+					<span class="exposure__value" id="count-seen">0</span>
+				</div>
+			</div>
+
+			<p class="current-file" id="current-file"></p>
+
+			<ul class="log" id="log" aria-label="Event log" aria-live="polite"></ul>
 		</section>
 
-		<section class="panel">
-			<h2>Recent Photos</h2>
-			<div id="photo-grid" class="photo-grid"></div>
+		<section class="frames" aria-label="Recent frames">
+			<div class="frames__head">
+				<h2>Recent frames</h2>
+				<span class="frames__count" id="frames-count"></span>
+			</div>
+			<div class="frames__grid" id="photo-grid"></div>
+			<p class="frames__empty" id="frames-empty" hidden>No frames yet — sync to pull images from the camera.</p>
 		</section>
-	</main>
-
-	<footer id="config-line" class="config-line"></footer>
+	</div>
 
 	<script src="/app.js"></script>
 </body>
