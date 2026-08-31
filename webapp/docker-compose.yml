@@ -5,7 +5,7 @@ services:
     # for local development. To upgrade: bump this tag as part of the release commit (see
     # "Release process" in README.md), then `git pull && docker compose pull && docker compose up -d`
     # on the homeserver.
-    image: ghcr.io/cvd-unmatched/imagine-edge-docker:0.1.2
+    image: ghcr.io/cvd-unmatched/imagine-edge-docker:0.2.0
     build: .
     container_name: imaging-edge-web
     restart: unless-stopped
@@ -13,7 +13,7 @@ services:
     # dedicated USB WiFi adapter (a specific interface on the VM), while the
     # web server itself stays reachable on the VM's normal LAN interface.
     # This also means there is no Docker-level port isolation -- see the
-    # "Exposing the app" section in README.md.
+    # "Access control" section in README.md.
     network_mode: host
     cap_add:
       - NET_ADMIN
