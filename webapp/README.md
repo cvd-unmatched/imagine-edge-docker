@@ -25,6 +25,38 @@ Built on top of the SOAP/UPnP protocol client in [`../imaging-edge.py`](../imagi
 - Single camera, single user, no login. See "Exposing the app" below, this
   matters given host networking removes Docker's usual network isolation.
 
+## Configuration reference
+
+### Environment variables (`webapp/.env`, copied from `.env.example`)
+
+| Variable         | Default                 | Meaning |
+|------------------|--------------------------|---------|
+| `WIFI_SSID`      | *(required, no default)* | Camera's WiFi AP name, shown on the camera's screen when you enable "Send to Smartphone". |
+| `WIFI_PASSWORD`  | *(required, no default)* | Camera's WiFi AP password, also shown on that screen. |
+| `WIFI_INTERFACE` | `wlan1`                  | Name of the dedicated USB WiFi interface inside the VM (check with `ip link show`, don't assume it's `wlan1`). |
+| `CAMERA_IP`      | `192.168.122.1`          | Camera's fixed IP once joined to its WiFi. Only change if your model differs. |
+| `CAMERA_PORT`    | `64321`                  | Camera's SOAP/UPnP port. Only change if your model differs. |
+| `IMAGE_TAG`      | `0.1.0`                  | Which published image version to pull (see "Release process" below). Bump this to upgrade. |
+
+`OUTPUT_DIR` (`/data/photos`) is fixed in `docker-compose.yml`, it's the
+in-container path the photos volume is mounted at, not meant to be changed.
+
+### Port
+
+The app listens on **`8000`** inside the container. Because the service runs
+with `network_mode: host` (required for the WiFi join, see "How it works"
+above), there's no `ports:` mapping, `8000` is directly the port on the VM's
+own network stack, reachable at `http://<vm-address>:8000`. See "Exposing the
+app" below before opening this up to anything beyond your LAN.
+
+### Volume
+
+Downloaded photos persist in the named volume **`imaging_edge_photos`**,
+mounted at `/data/photos` in the container. It's the only stateful thing
+this app has, no database, back it up like you would any other photo
+library. Recreating the container (`docker compose up -d` after a pull)
+never touches it.
+
 ## Host / Proxmox prerequisites (one-time)
 
 1. On the Proxmox host, run `lsusb` to find your USB WiFi adapter's vendor:product ID.
