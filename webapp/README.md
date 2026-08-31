@@ -36,10 +36,11 @@ Built on top of the SOAP/UPnP protocol client in [`../imaging-edge.py`](../imagi
 | `WIFI_INTERFACE` | `wlan1`                  | Name of the dedicated USB WiFi interface inside the VM (check with `ip link show`, don't assume it's `wlan1`). |
 | `CAMERA_IP`      | `192.168.122.1`          | Camera's fixed IP once joined to its WiFi. Only change if your model differs. |
 | `CAMERA_PORT`    | `64321`                  | Camera's SOAP/UPnP port. Only change if your model differs. |
-| `IMAGE_TAG`      | `0.1.0`                  | Which published image version to pull (see "Release process" below). Bump this to upgrade. |
 
 `OUTPUT_DIR` (`/data/photos`) is fixed in `docker-compose.yml`, it's the
 in-container path the photos volume is mounted at, not meant to be changed.
+The image version isn't an env var either, it's pinned directly in
+`docker-compose.yml`'s `image:` line, see "Release process" below.
 
 ### Port
 
@@ -78,39 +79,52 @@ never touches it.
 
 ## Release process (build once, pull everywhere)
 
-Every push of a `vX.Y.Z` tag triggers [`.github/workflows/docker-publish.yml`](../.github/workflows/docker-publish.yml),
-which builds `webapp/Dockerfile` and pushes it to
-`ghcr.io/cvd-unmatched/imagine-edge-docker:X.Y.Z` (and `:latest`). The
-homeserver then just pulls, it never needs to build.
+The image version lives directly in `docker-compose.yml`'s `image:` line
+(not in `.env`, that file is for host-specific config/secrets, the version
+is the same for everyone running a given release, so it belongs in git like
+the rest of the deployment definition).
 
 To cut a release:
 
-```bash
-git tag v0.2.0
-git push origin v0.2.0
-```
+1. Bump the tag in [`docker-compose.yml`](docker-compose.yml) (`image: ghcr.io/cvd-unmatched/imagine-edge-docker:X.Y.Z`) and commit it.
+2. Tag and push:
+   ```bash
+   git tag vX.Y.Z
+   git push origin main --tags
+   ```
 
-Watch it build under the repo's **Actions** tab. First time only: GHCR
-packages default to **private**. Either make the package public (repo →
-Packages → this package → Package settings → Change visibility), or keep it
-private and `docker login ghcr.io` on the homeserver with a PAT that has the
-`read:packages` scope, private is the better default for a personal homelab
-tool.
+The tag push triggers [`.github/workflows/docker-publish.yml`](../.github/workflows/docker-publish.yml),
+which builds `webapp/Dockerfile` and pushes `ghcr.io/cvd-unmatched/imagine-edge-docker:X.Y.Z`
+(and `:latest`). Watch it build under the repo's **Actions** tab.
+
+First release only: GHCR packages default to **private**. Either make the
+package public (repo → Packages → this package → Package settings → Change
+visibility), or keep it private and `docker login ghcr.io` on the homeserver
+with a PAT that has the `read:packages` scope, private is the better default
+for a personal homelab tool.
 
 ## Deploy (on the homeserver)
 
 ```bash
-cd webapp
+git clone https://github.com/cvd-unmatched/imagine-edge-docker.git
+cd imagine-edge-docker/webapp
 cp .env.example .env
 # edit .env: set WIFI_SSID / WIFI_PASSWORD from your camera's pairing screen,
-# WIFI_INTERFACE to match step 3 above, and IMAGE_TAG to the version you want.
+# and WIFI_INTERFACE to match step 3 above.
 docker compose pull
 docker compose up -d
 ```
 
-Then open `http://<vm-address>:8000`. To upgrade later: bump `IMAGE_TAG` in
-`.env`, then repeat `docker compose pull && docker compose up -d`, no need
-to touch `docker-compose.yml` or rebuild anything on the server.
+Then open `http://<vm-address>:8000`. To upgrade later:
+
+```bash
+git pull
+docker compose pull
+docker compose up -d
+```
+
+`.env` is untouched by this, your WiFi/camera settings stay put, only the
+image version (pulled from the updated `docker-compose.yml`) changes.
 
 ## Local development (build instead of pull)
 

@@ -1,4 +1,4 @@
-FROM python:3.12.7-slim-bookworm
+FROM python:3.12.13-slim-bookworm
 
 # wpasupplicant: joins the camera's WiFi AP (control-socket mode, see app/wifi.py)
 # iw: interface scan/introspection

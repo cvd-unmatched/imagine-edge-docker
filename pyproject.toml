@@ -5,7 +5,8 @@ description = "Sony camera image downloader for Linux"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "requests>=2.32.5",
+    # >=2.34.2 for CVE-2026-25645 (insecure temp file in extract_zipped_paths)
+    "requests>=2.34.2",
 ]
 
 [project.optional-dependencies]

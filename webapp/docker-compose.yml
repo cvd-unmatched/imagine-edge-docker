@@ -2,8 +2,10 @@ services:
   imaging-edge-web:
     # `docker compose pull` fetches this from GHCR (built by .github/workflows/docker-publish.yml
     # on every version tag push); `docker compose build`/`up --build` builds it locally instead,
-    # for local development. Bump IMAGE_TAG in .env to upgrade, don't edit this file per release.
-    image: ghcr.io/cvd-unmatched/imagine-edge-docker:${IMAGE_TAG:-0.1.0}
+    # for local development. To upgrade: bump this tag as part of the release commit (see
+    # "Release process" in README.md), then `git pull && docker compose pull && docker compose up -d`
+    # on the homeserver.
+    image: ghcr.io/cvd-unmatched/imagine-edge-docker:0.1.0
     build: .
     container_name: imaging-edge-web
     restart: unless-stopped
