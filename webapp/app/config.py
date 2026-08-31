@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     camera_port: str = "64321"
     output_dir: str = "/data/photos"
 
+    webapp_username: str = ""
+    webapp_password: str = ""
+    webapp_secret_key: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

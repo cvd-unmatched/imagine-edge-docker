@@ -22,8 +22,10 @@ Built on top of the SOAP/UPnP protocol client in [`../imaging-edge.py`](../imagi
   the original CLI script uses).
 - No database. Downloaded photos live in a named Docker volume and are also
   what the "Recent Photos" grid and the dedupe check both read from.
-- Single camera, single user, no login. See "Exposing the app" below, this
-  matters given host networking removes Docker's usual network isolation.
+- Single camera, single user, gated by a built-in login (username/password,
+  signed session cookie). The app refuses to start at all if login
+  credentials aren't configured, see "Access control" below. This matters
+  given host networking removes Docker's usual network isolation.
 
 ## Configuration reference
 
@@ -36,6 +38,13 @@ Built on top of the SOAP/UPnP protocol client in [`../imaging-edge.py`](../imagi
 | `WIFI_INTERFACE` | `wlan1`                  | Name of the dedicated USB WiFi interface inside the VM (check with `ip link show`, don't assume it's `wlan1`). |
 | `CAMERA_IP`      | `192.168.122.1`          | Camera's fixed IP once joined to its WiFi. Only change if your model differs. |
 | `CAMERA_PORT`    | `64321`                  | Camera's SOAP/UPnP port. Only change if your model differs. |
+| `WEBAPP_USERNAME` | *(required, no default)* | Login username for the web UI. |
+| `WEBAPP_PASSWORD` | *(required, no default)* | Login password for the web UI. |
+| `WEBAPP_SECRET_KEY` | *(required, no default)* | Signs session cookies. Generate with `openssl rand -hex 32`. Changing it logs everyone out. |
+
+All three `WEBAPP_*` variables are required, the app's startup check refuses
+to run if any of them is empty, on purpose, so it can never silently come up
+wide open.
 
 `OUTPUT_DIR` (`/data/photos`) is fixed in `docker-compose.yml`, it's the
 in-container path the photos volume is mounted at, not meant to be changed.
@@ -110,12 +119,13 @@ git clone https://github.com/cvd-unmatched/imagine-edge-docker.git
 cd imagine-edge-docker/webapp
 cp .env.example .env
 # edit .env: set WIFI_SSID / WIFI_PASSWORD from your camera's pairing screen,
-# and WIFI_INTERFACE to match step 3 above.
+# WIFI_INTERFACE to match step 3 above, and WEBAPP_USERNAME / WEBAPP_PASSWORD /
+# WEBAPP_SECRET_KEY (the app won't start without all three, see "Access control").
 docker compose pull
 docker compose up -d
 ```
 
-Then open `http://<vm-address>:8000`. To upgrade later:
+Then open `http://<vm-address>:8000` and sign in. To upgrade later:
 
 ```bash
 git pull
@@ -134,20 +144,36 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-## Exposing the app
+## Access control
 
-`network_mode: host` means there's no Docker port mapping, no `ports:` needed,
-but also no isolation: the app listens on every interface the VM has, with
-no authentication built in. Don't expose port 8000 publicly. Reach it via
-your existing reverse proxy or Tailscale, pointed at the VM's LAN or Tailscale
-address on port 8000, or restrict it with a host firewall rule.
+Two independent layers, both matter, neither replaces the other.
+
+**App-level login** is always on. Every page and every `/api/*` route (except
+`/healthz`, for Docker's own health check) requires a signed session cookie;
+anyone without one gets bounced to `/login`. Startup itself refuses to run if
+`WEBAPP_USERNAME` / `WEBAPP_PASSWORD` / `WEBAPP_SECRET_KEY` aren't all set, so
+there's no accidental wide-open state. Sessions last 30 days; sign out clears
+the cookie. Note logins aren't rate-limited, this is a single-operator
+homelab tool, not a public login form, so that trade-off is deliberate. If
+you ever do expose this beyond your own LAN, put a reverse proxy with its own
+rate limiting in front.
+
+**Network exposure** is the second, independent layer. `network_mode: host`
+means there's no Docker port mapping, `8000` is directly on every interface
+the VM has, LAN included. The login above stops a random device on your LAN
+from *using* the app, but don't rely on it alone as your only barrier. Don't
+port-forward `8000` to the public internet. Reach the app over your existing
+reverse proxy or Tailscale, pointed at the VM's LAN or Tailscale address on
+port 8000, or restrict the port with a host firewall rule (`ufw`/`iptables`)
+to the ranges that should reach it.
 
 ## Verifying it actually works
 
 1. `docker compose logs -f` after `up -d`, confirm clean startup and `curl localhost:8000/healthz` returns `{"status":"ok"}`.
-2. Load the UI, check the footer shows the expected interface/camera IP and a masked SSID (confirms `.env` took effect).
-3. Put the camera in pairing mode, click Pair, watch the status move through
+2. Load the UI, it should redirect straight to `/login`. Confirm a wrong password shows an error and the right one signs you in; `/api/status` should return 401 JSON when hit without a session.
+3. Once signed in, check the footer shows the expected interface/camera IP and a masked SSID (confirms `.env` took effect).
+4. Put the camera in pairing mode, click Pair, watch the status move through
    `joining_wifi` → `verifying_camera` → `transferring` → `done`.
-4. `docker exec imaging-edge-web ls -R /data/photos` to confirm files landed in the volume.
-5. Click Pair again with no new camera photos, everything should report as skipped.
-6. Check `ip route` on the VM host before/after a pairing run, the default route should be unchanged throughout.
+5. `docker exec imaging-edge-web ls -R /data/photos` to confirm files landed in the volume.
+6. Click Pair again with no new camera photos, everything should report as skipped.
+7. Check `ip route` on the VM host before/after a pairing run, the default route should be unchanged throughout.

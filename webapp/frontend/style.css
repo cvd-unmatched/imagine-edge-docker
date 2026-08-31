@@ -1,4 +1,4 @@
-/* Hallmark · route: custom (bespoke) · structure: single-screen "viewfinder" utility —
+/* Hallmark · route: custom (bespoke) · structure: single-screen "viewfinder" utility.
  * AF-bracket status readout + shutter-button primary action + exposure-style counters +
  * contact-sheet photo grid. No page-level nav, hero, or footer-as-sitemap.
  * idea: "the app is the camera's own viewfinder screen, managing its own images"
@@ -60,24 +60,51 @@ body {
   grid-column: 1 / -1;
 }
 
-.wordmark {
+/* Original lettering, not Sony's typeface or logo file, an homage: the "O" is a
+   drawn lens icon, and the real project name is the visible line underneath. */
+.brand {
   display: inline-flex;
-  align-items: center;
-  gap: var(--space-2xs);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--text-sm);
-  letter-spacing: 0.14em;
-  color: var(--color-ink);
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1;
   white-space: nowrap;
 }
 
-.wordmark__dot {
-  width: 7px;
-  height: 7px;
+.brand__mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.06em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.3rem;
+  letter-spacing: 0.02em;
+  color: var(--color-ink);
+}
+
+.brand__lens {
+  position: relative;
+  width: 0.76em;
+  height: 0.76em;
+  border-radius: 50%;
+  border: 0.13em solid var(--color-ink);
+  box-sizing: border-box;
+  flex: none;
+}
+.brand__lens::after {
+  content: "";
+  position: absolute;
+  inset: 27%;
   border-radius: 50%;
   background: var(--color-accent);
-  box-shadow: 0 0 0 3px oklch(70% 0.19 45 / 0.16);
+}
+
+.brand__sub {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--text-xs);
+  letter-spacing: 0.16em;
+  color: var(--color-muted);
+  text-transform: uppercase;
 }
 
 .telemetry__spacer { flex: 1 1 auto; }
@@ -405,6 +432,100 @@ body {
   font-size: var(--text-sm);
 }
 .frames__empty[hidden] { display: none; }
+
+/* ============ sign-out control ============ */
+
+.telemetry__signout {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  text-decoration: none;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-input);
+  padding: var(--space-3xs) var(--space-xs);
+  white-space: nowrap;
+}
+.telemetry__signout:hover { color: var(--color-ink); border-color: var(--color-rule-2); }
+.telemetry__signout:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+/* ============ login page ============ */
+
+.login-body {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-lg);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 22rem;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-xl);
+  padding: var(--space-xl) var(--space-lg);
+  background: var(--color-paper-2);
+  border-radius: var(--radius-card);
+}
+
+.login-form {
+  width: 100%;
+  display: grid;
+  gap: var(--space-2xs);
+}
+
+.login-form__label {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  color: var(--color-ink-2);
+  margin-top: var(--space-sm);
+}
+.login-form__label:first-child { margin-top: 0; }
+
+.login-form__input {
+  height: 44px;
+  padding-inline: var(--space-sm);
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule-2);
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+  border-radius: var(--radius-input);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+}
+.login-form__input::placeholder { color: var(--color-muted); }
+.login-form__input:focus-visible {
+  outline: 2px solid var(--color-focus);
+  border-color: var(--color-ink-2);
+}
+
+.login-form__error {
+  margin: var(--space-sm) 0 0;
+  color: var(--color-error);
+  font-size: var(--text-sm);
+}
+
+.login-form__submit {
+  height: 44px;
+  margin-top: var(--space-lg);
+  border: none;
+  border-radius: var(--radius-input);
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: transform 100ms var(--ease-out), background-color var(--dur-short) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .login-form__submit:hover { background: var(--color-focus); }
+}
+.login-form__submit:active { transform: translateY(1px); }
+.login-form__submit:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
 
 /* ============ reduced motion ============ */
 

@@ -16,6 +16,15 @@ const tmSsid = document.getElementById("tm-ssid");
 
 const BUSY_STATES = new Set(["starting", "joining_wifi", "verifying_camera", "transferring"]);
 
+async function apiFetch(url, opts) {
+	const res = await fetch(url, opts);
+	if (res.status === 401) {
+		window.location.href = "/login";
+		throw new Error("Not authenticated");
+	}
+	return res;
+}
+
 function frameState(state) {
 	if (BUSY_STATES.has(state)) return "busy";
 	if (state === "done") return "done";
@@ -55,12 +64,12 @@ function appendLog(event) {
 }
 
 async function fetchStatus() {
-	const res = await fetch("/api/status");
+	const res = await apiFetch("/api/status");
 	applyStatus(await res.json());
 }
 
 async function fetchPhotos() {
-	const res = await fetch("/api/photos");
+	const res = await apiFetch("/api/photos");
 	const photos = await res.json();
 	photoGrid.innerHTML = "";
 	for (const photo of photos) {
@@ -79,7 +88,7 @@ async function fetchPhotos() {
 }
 
 async function fetchConfig() {
-	const res = await fetch("/api/config");
+	const res = await apiFetch("/api/config");
 	const cfg = await res.json();
 	tmIface.innerHTML = `IF <strong>${cfg.wifi_interface}</strong>`;
 	tmCamera.innerHTML = `CAM <strong>${cfg.camera_ip}:${cfg.camera_port}</strong>`;
@@ -92,7 +101,7 @@ shutter.addEventListener("click", async () => {
 	void shutter.offsetWidth;
 	shutter.classList.add("is-pressed");
 
-	const res = await fetch("/api/pair", { method: "POST" });
+	const res = await apiFetch("/api/pair", { method: "POST" });
 	if (res.status === 409) {
 		phaseLine.textContent = "Sync already in progress.";
 		return;

@@ -9,11 +9,15 @@
 <body>
 	<div class="shell">
 		<div class="telemetry">
-			<span class="wordmark"><span class="wordmark__dot" aria-hidden="true"></span>IMAGING EDGE</span>
+			<span class="brand">
+				<span class="brand__mark" aria-hidden="true">S<span class="brand__lens"></span>NY</span>
+				<span class="brand__sub">Imagine Edge Docker</span>
+			</span>
 			<span class="telemetry__spacer"></span>
-			<span class="telemetry__item" id="tm-iface">IF —</span>
-			<span class="telemetry__item" id="tm-camera">CAM —</span>
-			<span class="telemetry__item" id="tm-ssid">SSID —</span>
+			<span class="telemetry__item" id="tm-iface">IF …</span>
+			<span class="telemetry__item" id="tm-camera">CAM …</span>
+			<span class="telemetry__item" id="tm-ssid">SSID …</span>
+			<a class="telemetry__signout" href="/logout">Sign out</a>
 		</div>
 
 		<section class="viewfinder" aria-label="Pairing status">
@@ -63,7 +67,7 @@
 				<span class="frames__count" id="frames-count"></span>
 			</div>
 			<div class="frames__grid" id="photo-grid"></div>
-			<p class="frames__empty" id="frames-empty" hidden>No frames yet — sync to pull images from the camera.</p>
+			<p class="frames__empty" id="frames-empty" hidden>No frames yet. Sync to pull images from the camera.</p>
 		</section>
 	</div>
 

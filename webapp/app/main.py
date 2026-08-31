@@ -2,12 +2,13 @@ import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi import FastAPI, Form, HTTPException, Request
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import sync_service
+from . import auth, sync_service
 from .config import settings
+from .login_page import render_login_page
 from .state import app_state
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
@@ -17,11 +18,59 @@ BUSY_STATES = {"starting", "joining_wifi", "verifying_camera", "transferring"}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Fail closed: refuse to run wide open if login credentials or the
+    # session-signing key were never configured.
+    if not settings.webapp_username or not settings.webapp_password or not settings.webapp_secret_key:
+        raise RuntimeError(
+            "WEBAPP_USERNAME, WEBAPP_PASSWORD, and WEBAPP_SECRET_KEY must all be set in .env, "
+            "the app will not start without them. See webapp/.env.example."
+        )
     app_state.bind_loop(asyncio.get_running_loop())
     yield
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+@app.middleware("http")
+async def auth_gate(request: Request, call_next):
+    path = request.url.path
+    if path == "/healthz" or path == "/login":
+        return await call_next(request)
+    if path.startswith("/api/"):
+        if not auth.is_authenticated(request, settings):
+            return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+        return await call_next(request)
+    if path == "/" and not auth.is_authenticated(request, settings):
+        return RedirectResponse(url="/login", status_code=303)
+    return await call_next(request)
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_form(error: int = 0):
+    return render_login_page(error=bool(error))
+
+
+@app.post("/login")
+async def login_submit(username: str = Form(...), password: str = Form(...)):
+    if not auth.check_credentials(username, password, settings):
+        return RedirectResponse(url="/login?error=1", status_code=303)
+    response = RedirectResponse(url="/", status_code=303)
+    response.set_cookie(
+        auth.COOKIE_NAME,
+        auth.create_session_cookie(settings),
+        max_age=auth.SESSION_MAX_AGE_SECONDS,
+        httponly=True,
+        samesite="lax",
+    )
+    return response
+
+
+@app.get("/logout")
+async def logout():
+    response = RedirectResponse(url="/login", status_code=303)
+    response.delete_cookie(auth.COOKIE_NAME)
+    return response
 
 
 @app.get("/healthz")

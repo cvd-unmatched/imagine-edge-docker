@@ -7,3 +7,4 @@ requests==2.34.2
 # urllib3: >=2.6.3 for CVE-2026-21441 (decompression-bomb DoS via redirects)
 urllib3==2.7.0
 pydantic-settings==2.14.2
+python-multipart==0.0.20
