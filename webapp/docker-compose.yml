@@ -5,7 +5,7 @@ services:
     # for local development. To upgrade: bump this tag as part of the release commit (see
     # "Release process" in README.md), then `git pull && docker compose pull && docker compose up -d`
     # on the homeserver.
-    image: ghcr.io/cvd-unmatched/imagine-edge-docker:0.1.1
+    image: ghcr.io/cvd-unmatched/imagine-edge-docker:0.1.2
     build: .
     container_name: imaging-edge-web
     restart: unless-stopped
