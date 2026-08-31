@@ -1,0 +1,33 @@
+services:
+  imaging-edge-web:
+    # `docker compose pull` fetches this from GHCR (built by .github/workflows/docker-publish.yml
+    # on every version tag push); `docker compose build`/`up --build` builds it locally instead,
+    # for local development. Bump IMAGE_TAG in .env to upgrade, don't edit this file per release.
+    image: ghcr.io/cvd-unmatched/imagine-edge-docker:${IMAGE_TAG:-0.1.0}
+    build: .
+    container_name: imaging-edge-web
+    restart: unless-stopped
+    # Host networking is required so the container can directly drive the
+    # dedicated USB WiFi adapter (a specific interface on the VM), while the
+    # web server itself stays reachable on the VM's normal LAN interface.
+    # This also means there is no Docker-level port isolation -- see the
+    # "Exposing the app" section in README.md.
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    devices:
+      - /dev/rfkill
+    env_file:
+      - .env
+    environment:
+      - WIFI_INTERFACE=${WIFI_INTERFACE:-wlan1}
+      - CAMERA_IP=${CAMERA_IP:-192.168.122.1}
+      - CAMERA_PORT=${CAMERA_PORT:-64321}
+      - OUTPUT_DIR=/data/photos
+    volumes:
+      - imaging_edge_photos:/data/photos
+
+volumes:
+  imaging_edge_photos:
+    name: imaging_edge_photos

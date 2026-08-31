@@ -26,6 +26,10 @@ You can automate the WiFi connection using the `autoconnect.sh` script. Set your
 ## Reverse Engineering
 The camera shows which web services it offers in `http://192.168.122.1:64321/DmsDescPush.xml`. This for example leads to `http://192.168.122.1:64321/XPlsDesc.xml`, showing which commands it understands for transfer control. While the commands TransferStart and TransferEnd are working, TransferProgress does nothing on my camera.
 
+## Web app
+
+There's also a Dockerized web UI version of this in [`webapp/`](webapp/README.md), meant to run on a homeserver: a "Pair & Sync" button joins the camera's WiFi via a dedicated USB adapter, downloads new images with live progress, and skips ones already downloaded. See [webapp/README.md](webapp/README.md) for setup.
+
 ## Tests
 Feedback, stars and contributions welcome! Please tell me if your camera is working too.
 

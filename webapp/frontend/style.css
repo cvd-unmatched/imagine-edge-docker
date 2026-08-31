@@ -1,0 +1,145 @@
+:root {
+	--bg: #f7f7f8;
+	--fg: #1b1b1f;
+	--panel: #ffffff;
+	--border: #e0e0e3;
+	--accent: #3763f4;
+	--muted: #6b6b73;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #16161a;
+		--fg: #e8e8ec;
+		--panel: #1f1f24;
+		--border: #2c2c33;
+		--accent: #6f8dff;
+		--muted: #9a9aa2;
+	}
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	background: var(--bg);
+	color: var(--fg);
+}
+
+header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 1.5rem;
+	border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+	font-size: 1.2rem;
+	margin: 0;
+}
+
+.badge {
+	padding: 0.25rem 0.75rem;
+	border-radius: 999px;
+	font-size: 0.8rem;
+	text-transform: capitalize;
+}
+
+.badge-idle { background: var(--border); color: var(--muted); }
+.badge-busy { background: #fff3cd; color: #856404; }
+.badge-done { background: #d4edda; color: #155724; }
+.badge-error { background: #f8d7da; color: #721c24; }
+
+main {
+	max-width: 900px;
+	margin: 0 auto;
+	padding: 1.5rem;
+	display: grid;
+	gap: 1.5rem;
+}
+
+.panel {
+	background: var(--panel);
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	padding: 1.25rem;
+}
+
+.panel h2 {
+	margin-top: 0;
+	font-size: 1rem;
+}
+
+#pair-btn {
+	font-size: 1rem;
+	padding: 0.6rem 1.5rem;
+	border: none;
+	border-radius: 8px;
+	background: var(--accent);
+	color: white;
+	cursor: pointer;
+}
+
+#pair-btn:disabled {
+	opacity: 0.6;
+	cursor: default;
+}
+
+.phase-line {
+	margin-top: 0.75rem;
+	color: var(--muted);
+}
+
+.counts {
+	display: flex;
+	gap: 1.25rem;
+	margin-top: 0.75rem;
+	font-size: 0.9rem;
+}
+
+.current-file {
+	margin-top: 0.5rem;
+	font-size: 0.85rem;
+	color: var(--muted);
+	min-height: 1.1em;
+}
+
+.log {
+	list-style: none;
+	margin: 1rem 0 0;
+	padding: 0;
+	max-height: 200px;
+	overflow-y: auto;
+	font-size: 0.8rem;
+	color: var(--muted);
+}
+
+.log li {
+	padding: 0.15rem 0;
+	border-bottom: 1px solid var(--border);
+}
+
+.photo-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+	gap: 0.5rem;
+}
+
+.photo-grid img {
+	width: 100%;
+	aspect-ratio: 1;
+	object-fit: cover;
+	border-radius: 8px;
+	background: var(--border);
+}
+
+.config-line {
+	text-align: center;
+	font-size: 0.75rem;
+	color: var(--muted);
+	padding: 1rem 0 1.5rem;
+}

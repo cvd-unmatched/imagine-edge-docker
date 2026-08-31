@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Camera Sync</title>
+	<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+	<header>
+		<h1>Camera Sync</h1>
+		<span id="status-badge" class="badge badge-idle">idle</span>
+	</header>
+
+	<main>
+		<section class="panel">
+			<button id="pair-btn">Pair &amp; Sync</button>
+			<div id="phase-line" class="phase-line">Ready. Put the camera in "Send to Smartphone" mode, then press Pair.</div>
+			<div class="counts">
+				<span>Downloaded: <strong id="count-downloaded">0</strong></span>
+				<span>Skipped: <strong id="count-skipped">0</strong></span>
+				<span>Seen: <strong id="count-seen">0</strong></span>
+			</div>
+			<div id="current-file" class="current-file"></div>
+			<ul id="log" class="log"></ul>
+		</section>
+
+		<section class="panel">
+			<h2>Recent Photos</h2>
+			<div id="photo-grid" class="photo-grid"></div>
+		</section>
+	</main>
+
+	<footer id="config-line" class="config-line"></footer>
+
+	<script src="/app.js"></script>
+</body>
+</html>

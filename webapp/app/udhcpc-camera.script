@@ -1,0 +1,41 @@
+#!/bin/sh
+# Minimal udhcpc script for joining the camera's WiFi.
+#
+# It ONLY ever sets the interface's IP address. It deliberately never adds a
+# route (busybox udhcpc's stock script would install a default route via the
+# camera's DHCP gateway, which -- since the app runs under network_mode: host
+# to control a dedicated USB WiFi adapter -- would hijack the host's real
+# default route on every pairing). The kernel adds a connected route for the
+# interface's own subnet automatically as soon as the address is assigned,
+# so the camera stays reachable without touching routing at all.
+
+mask2cidr() {
+	nbits=0
+	IFS=.
+	for octet in $1; do
+		case "$octet" in
+			255) nbits=$((nbits + 8)) ;;
+			254) nbits=$((nbits + 7)) ;;
+			252) nbits=$((nbits + 6)) ;;
+			248) nbits=$((nbits + 5)) ;;
+			240) nbits=$((nbits + 4)) ;;
+			224) nbits=$((nbits + 3)) ;;
+			192) nbits=$((nbits + 2)) ;;
+			128) nbits=$((nbits + 1)) ;;
+			0) ;;
+			*) echo "24"; return ;;
+		esac
+	done
+	echo "$nbits"
+}
+
+case "$1" in
+	deconfig)
+		ip addr flush dev "$interface"
+		;;
+	bound|renew)
+		ip addr flush dev "$interface"
+		prefix=$(mask2cidr "${subnet:-255.255.255.0}")
+		ip addr add "$ip/$prefix" dev "$interface"
+		;;
+esac
