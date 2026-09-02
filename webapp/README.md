@@ -41,6 +41,7 @@ Built on top of the SOAP/UPnP protocol client in [`../imaging-edge.py`](../imagi
 | `WEBAPP_USERNAME` | *(required, no default)* | Login username for the web UI. |
 | `WEBAPP_PASSWORD` | *(required, no default)* | Login password for the web UI. |
 | `WEBAPP_SECRET_KEY` | *(required, no default)* | Signs session cookies. Generate with `openssl rand -hex 32`. Changing it logs everyone out. |
+| `WEBAPP_PORT`    | `8000`                   | Port the app listens on. Change this (not `docker-compose.yml`) if `8000` is already taken on the homeserver, see "Port" below. |
 
 All three `WEBAPP_*` variables are required, the app's startup check refuses
 to run if any of them is empty, on purpose, so it can never silently come up
@@ -53,11 +54,16 @@ The image version isn't an env var either, it's pinned directly in
 
 ### Port
 
-The app listens on **`8000`** inside the container. Because the service runs
-with `network_mode: host` (required for the WiFi join, see "How it works"
-above), there's no `ports:` mapping, `8000` is directly the port on the VM's
-own network stack, reachable at `http://<vm-address>:8000`. See "Exposing the
-app" below before opening this up to anything beyond your LAN.
+The app listens on **`WEBAPP_PORT`** (default `8000`). Because the service
+runs with `network_mode: host` (required for the WiFi join, see "How it
+works" above), there's no `ports:` mapping to remap through, unlike a normal
+bridge-networked container, whatever port the app binds to inside the
+container *is* the port on the homeserver itself. If something else on that
+machine already holds `8000`, you can't work around it with a compose-level
+remap, you have to change the app's own listen port. Set `WEBAPP_PORT` in
+`.env` to a free port and restart, `docker-compose.yml` doesn't need editing,
+it already reads this from `.env`. See "Access control" below before opening
+this up to anything beyond your LAN.
 
 ### Volume
 
@@ -79,8 +85,8 @@ never touches it.
    bound driver, some Realtek chipsets need an out-of-tree DKMS driver.
 5. Run `rfkill list` once to confirm nothing's soft-blocked (the app also does
    this defensively on every pairing, but worth checking manually first).
-6. If the VM runs `ufw` or similar, allow the app's port (`8000`) from whatever
-   LAN/Tailscale range should reach it.
+6. If the VM runs `ufw` or similar, allow the app's port (`8000` unless you
+   changed `WEBAPP_PORT`) from whatever LAN/Tailscale range should reach it.
 7. If deploying through CasaOS's compose-import UI, confirm afterwards with
    `docker inspect imaging-edge-web` that `network_mode: host`, the two
    `cap_add` entries, and the `/dev/rfkill` device mapping actually took
@@ -125,7 +131,7 @@ docker compose pull
 docker compose up -d
 ```
 
-Then open `http://<vm-address>:8000` and sign in. To upgrade later:
+Then open `http://<vm-address>:8000` (or your `WEBAPP_PORT`) and sign in. To upgrade later:
 
 ```bash
 git pull
@@ -159,13 +165,13 @@ you ever do expose this beyond your own LAN, put a reverse proxy with its own
 rate limiting in front.
 
 **Network exposure** is the second, independent layer. `network_mode: host`
-means there's no Docker port mapping, `8000` is directly on every interface
-the VM has, LAN included. The login above stops a random device on your LAN
-from *using* the app, but don't rely on it alone as your only barrier. Don't
-port-forward `8000` to the public internet. Reach the app over your existing
-reverse proxy or Tailscale, pointed at the VM's LAN or Tailscale address on
-port 8000, or restrict the port with a host firewall rule (`ufw`/`iptables`)
-to the ranges that should reach it.
+means there's no Docker port mapping, `WEBAPP_PORT` (`8000` by default) is
+directly on every interface the VM has, LAN included. The login above stops
+a random device on your LAN from *using* the app, but don't rely on it alone
+as your only barrier. Don't port-forward that port to the public internet.
+Reach the app over your existing reverse proxy or Tailscale, pointed at the
+VM's LAN or Tailscale address, or restrict the port with a host firewall
+rule (`ufw`/`iptables`) to the ranges that should reach it.
 
 ## Verifying it actually works
 

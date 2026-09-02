@@ -5,7 +5,7 @@ services:
     # for local development. To upgrade: bump this tag as part of the release commit (see
     # "Release process" in README.md), then `git pull && docker compose pull && docker compose up -d`
     # on the homeserver.
-    image: ghcr.io/cvd-unmatched/imagine-edge-docker:0.2.0
+    image: ghcr.io/cvd-unmatched/imagine-edge-docker:0.2.1
     build: .
     container_name: imaging-edge-web
     restart: unless-stopped
@@ -26,6 +26,7 @@ services:
       - WIFI_INTERFACE=${WIFI_INTERFACE:-wlan1}
       - CAMERA_IP=${CAMERA_IP:-192.168.122.1}
       - CAMERA_PORT=${CAMERA_PORT:-64321}
+      - WEBAPP_PORT=${WEBAPP_PORT:-8000}
       - OUTPUT_DIR=/data/photos
     volumes:
       - imaging_edge_photos:/data/photos
