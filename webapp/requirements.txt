@@ -1,11 +1,16 @@
-# fastapi/starlette: >=1.0.1 for CVE-2026-48710 (Starlette "BadHost" auth bypass)
+# fastapi/starlette: starlette >=1.3.1 clears several advisories on top of the
+# earlier BadHost auth bypass -- form() size-limit bypass DoS, StaticFiles UNC
+# SSRF (Windows), HTTPEndpoint method dispatch via getattr, and request
+# authority poisoning. fastapi 0.141.1 is compatible with starlette 1.3.1.
 fastapi==0.141.1
-starlette==1.0.1
+starlette==1.3.1
 uvicorn[standard]==0.52.3
 # requests: >=2.33.0 for CVE-2026-25645 (insecure temp file in extract_zipped_paths)
 requests==2.34.2
-# urllib3: >=2.6.3 for CVE-2026-21441 (decompression-bomb DoS via redirects)
-urllib3==2.7.0
+# urllib3: >=2.8.0 -- fixes unbounded chunk-size line buffering (DoS) and the
+# chunked-deflate infinite loop, on top of the earlier decompression-bomb DoS
+# via redirects.
+urllib3==2.8.0
 pydantic-settings==2.14.2
 # python-multipart: >=0.0.27 for CVE-2026-40347 and CVE-2026-42561 (DoS via
 # crafted multipart/form-data, used for the login form)
