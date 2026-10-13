@@ -30,6 +30,10 @@ The camera shows which web services it offers in `http://192.168.122.1:64321/Dms
 
 There's also a Dockerized web UI version of this in [`webapp/`](webapp/README.md), meant to run on a homeserver: a "Pair & Sync" button joins the camera's WiFi via a dedicated USB adapter, downloads new images with live progress, and skips ones already downloaded. See [webapp/README.md](webapp/README.md) for setup.
 
+![Camera Sync web UI: the pairing viewfinder on the left, the Recent frames contact sheet on the right](webapp/docs/screenshot.png)
+
+<sub>The frames shown above are generated test patterns, not real photos.</sub>
+
 ## Tests
 Feedback, stars and contributions welcome! Please tell me if your camera is working too.
 

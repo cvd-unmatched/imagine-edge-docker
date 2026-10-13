@@ -5,6 +5,10 @@ Put your camera into **Send to Smartphone** mode, click **Pair & Sync** in
 the browser, and it joins the camera's WiFi over a dedicated USB adapter,
 pulls new images, and skips anything already downloaded, with live progress.
 
+![Camera Sync web UI: the pairing viewfinder on the left, the Recent frames contact sheet on the right](docs/screenshot.png)
+
+<sub>The frames shown above are generated test patterns, not real photos.</sub>
+
 Built on top of the SOAP/UPnP protocol client in [`../imaging-edge.py`](../imaging-edge.py)
 (the original CLI tool, kept as-is at the repo root for reference).
 
