@@ -323,11 +323,16 @@ body {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 12rem;
+  max-height: 16rem;
   overflow-y: auto;
   border: 1px solid var(--color-rule);
   border-radius: var(--radius-input);
   background: var(--color-paper-2);
+}
+
+/* On desktop the viewfinder column has room to spare, so let the log use it. */
+@media (min-width: 60rem) {
+  .log { max-height: min(60vh, 42rem); }
 }
 
 .log li {
@@ -396,21 +401,27 @@ body {
 @media (max-width: 59.99rem) and (min-width: 40rem) { .frames__grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 @media (max-width: 39.99rem) { .frames__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
-.frames__grid figure {
+.frames__tile {
   margin: 0;
+  padding: 0;
   position: relative;
   aspect-ratio: 1;
   background: var(--color-paper-2);
+  border: none;
+  cursor: pointer;
+  display: block;
+  overflow: hidden;
 }
 
-.frames__grid img {
+.frames__tile img,
+.frames__tile video {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.frames__grid figure::after {
+.frames__tile::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -420,8 +431,150 @@ body {
   pointer-events: none;
 }
 @media (hover: hover) and (pointer: fine) {
-  .frames__grid figure:hover::after { opacity: 1; }
+  .frames__tile:hover::after { opacity: 1; }
 }
+.frames__tile:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+/* play triangle badge over video tiles */
+.frames__badge {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--color-paper) 55%, transparent);
+  pointer-events: none;
+}
+.frames__badge::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0.5rem 0 0.5rem 0.8rem;
+  border-color: transparent transparent transparent var(--color-ink);
+  transform: translateX(0.1rem);
+}
+
+/* a tile whose media failed to load: show its name instead of a blank square */
+.frames__tile--broken {
+  display: grid;
+  place-items: center;
+  background: var(--color-paper-3);
+}
+.frames__tile--broken img,
+.frames__tile--broken video { display: none; }
+.frames__broken {
+  padding: var(--space-2xs);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  text-align: center;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+
+/* ============ lightbox ============ */
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-sticky);
+  display: grid;
+  grid-template-rows: 1fr auto;
+  place-items: center;
+  padding: clamp(var(--space-md), 4vw, var(--space-xl));
+  background: color-mix(in oklch, var(--color-paper) 88%, black);
+}
+.lightbox[hidden] { display: none; }
+
+.lightbox__stage {
+  grid-row: 1;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.lightbox__stage img,
+.lightbox__stage video {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: var(--radius-input);
+  background: var(--color-paper);
+}
+
+.lightbox__bar {
+  grid-row: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm) var(--space-lg);
+  padding-top: var(--space-md);
+}
+.lightbox__name {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  color: var(--color-ink-2);
+  overflow-wrap: anywhere;
+}
+.lightbox__download {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  color: var(--color-accent-ink);
+  background: var(--color-accent);
+  text-decoration: none;
+  border-radius: var(--radius-input);
+  padding: var(--space-2xs) var(--space-sm);
+  white-space: nowrap;
+}
+.lightbox__download:hover { background: var(--color-focus); }
+.lightbox__download:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+.lightbox__close,
+.lightbox__nav {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-rule);
+  background: color-mix(in oklch, var(--color-paper-2) 80%, transparent);
+  color: var(--color-ink);
+  cursor: pointer;
+  font-family: var(--font-display);
+  border-radius: var(--radius-input);
+}
+.lightbox__close {
+  top: var(--space-md);
+  right: var(--space-md);
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: var(--text-md);
+}
+.lightbox__nav {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.75rem;
+  height: 3.5rem;
+  font-size: var(--text-xl);
+  line-height: 1;
+}
+.lightbox__nav[hidden] { display: none; }
+.lightbox__nav--prev { left: var(--space-md); }
+.lightbox__nav--next { right: var(--space-md); }
+.lightbox__close:hover,
+.lightbox__nav:hover { border-color: var(--color-accent); }
+.lightbox__close:focus-visible,
+.lightbox__nav:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 
 .frames__empty {
   margin: 0;

@@ -71,6 +71,17 @@
 		</section>
 	</div>
 
+	<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Media viewer">
+		<button class="lightbox__close" id="lightbox-close" type="button" aria-label="Close viewer">&#x2715;</button>
+		<button class="lightbox__nav lightbox__nav--prev" id="lightbox-prev" type="button" aria-label="Previous">&#x2039;</button>
+		<button class="lightbox__nav lightbox__nav--next" id="lightbox-next" type="button" aria-label="Next">&#x203A;</button>
+		<div class="lightbox__stage" id="lightbox-stage"></div>
+		<div class="lightbox__bar">
+			<span class="lightbox__name" id="lightbox-name"></span>
+			<a class="lightbox__download" id="lightbox-download" href="#" download>Download original</a>
+		</div>
+	</div>
+
 	<script src="/app.js"></script>
 </body>
 </html>
