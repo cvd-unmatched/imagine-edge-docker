@@ -118,24 +118,26 @@ async def events():
 
 
 @app.get("/api/photos")
-async def list_photos(limit: int = 50):
+async def list_photos(limit: int = 60, offset: int = 0):
+    limit = max(1, min(limit, 500))
+    offset = max(0, offset)
     output_dir = Path(settings.output_dir)
     if not output_dir.exists():
-        return []
-    files = [p for p in output_dir.rglob("*") if p.is_file()]
-    files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-    result = []
-    for p in files[:limit]:
-        stat = p.stat()
-        result.append(
-            {
-                "path": str(p.relative_to(output_dir)),
-                "name": p.name,
-                "size": stat.st_size,
-                "mtime": stat.st_mtime,
-            }
-        )
-    return result
+        return {"items": [], "total": 0, "limit": limit, "offset": offset}
+    # stat once per file, then sort newest-first, then slice the requested page
+    entries = [(p, p.stat()) for p in output_dir.rglob("*") if p.is_file()]
+    entries.sort(key=lambda e: e[1].st_mtime, reverse=True)
+    total = len(entries)
+    items = [
+        {
+            "path": str(p.relative_to(output_dir)),
+            "name": p.name,
+            "size": stat.st_size,
+            "mtime": stat.st_mtime,
+        }
+        for p, stat in entries[offset : offset + limit]
+    ]
+    return {"items": items, "total": total, "limit": limit, "offset": offset}
 
 
 @app.get("/api/photos/{photo_path:path}")

@@ -586,6 +586,42 @@ body {
 }
 .frames__empty[hidden] { display: none; }
 
+/* ============ pager ============ */
+
+.frames__pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+.frames__pager[hidden] { display: none; }
+
+.frames__pagebtn {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  color: var(--color-ink-2);
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-input);
+  padding: var(--space-2xs) var(--space-sm);
+  cursor: pointer;
+  transition: border-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .frames__pagebtn:hover:not(:disabled) { border-color: var(--color-accent); color: var(--color-ink); }
+}
+.frames__pagebtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.frames__pagebtn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+.frames__pageinfo {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ============ sign-out control ============ */
 
 .telemetry__signout {

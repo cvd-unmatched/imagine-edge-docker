@@ -20,13 +20,19 @@ const lightboxDownload = document.getElementById("lightbox-download");
 const lightboxClose = document.getElementById("lightbox-close");
 const lightboxPrev = document.getElementById("lightbox-prev");
 const lightboxNext = document.getElementById("lightbox-next");
+const pager = document.getElementById("frames-pager");
+const pagePrev = document.getElementById("page-prev");
+const pageNext = document.getElementById("page-next");
+const pageInfo = document.getElementById("page-info");
 
 const BUSY_STATES = new Set(["starting", "joining_wifi", "verifying_camera", "transferring"]);
 const VIDEO_EXTS = new Set(["mp4", "mov", "m4v", "avi", "mts", "m2ts", "webm", "mkv"]);
 const MAX_LOG_ENTRIES = 200;
-const PHOTO_LIMIT = 500;
+const PAGE_SIZE = 60;
 
-let currentPhotos = [];
+let currentPhotos = []; // items on the currently shown page
+let currentPage = 0;    // 0-indexed
+let totalPhotos = 0;
 
 function isVideo(name) {
 	const dot = name.lastIndexOf(".");
@@ -134,27 +140,59 @@ function buildTile(photo, index) {
 	return tile;
 }
 
-async function fetchPhotos() {
-	const res = await apiFetch(`/api/photos?limit=${PHOTO_LIMIT}`);
-	const photos = await res.json();
-	currentPhotos = photos;
-	photoGrid.innerHTML = "";
-	photos.forEach((photo, index) => photoGrid.appendChild(buildTile(photo, index)));
-	framesEmpty.hidden = photos.length > 0;
-	framesCount.textContent = photos.length > 0 ? String(photos.length) : "";
+function totalPages() {
+	return Math.max(1, Math.ceil(totalPhotos / PAGE_SIZE));
 }
 
-// During a transfer, download_done fires rapidly; rebuilding the whole grid on
-// every event thrashes in-flight requests (and some tiles never finish loading).
+function renderPager() {
+	const pages = totalPages();
+	framesCount.textContent = totalPhotos > 0 ? String(totalPhotos) : "";
+	framesEmpty.hidden = totalPhotos > 0;
+	pager.hidden = pages <= 1;
+	pageInfo.textContent = `Page ${currentPage + 1} / ${pages}`;
+	pagePrev.disabled = currentPage <= 0;
+	pageNext.disabled = currentPage >= pages - 1;
+}
+
+async function fetchPhotos(page = currentPage) {
+	const offset = page * PAGE_SIZE;
+	const res = await apiFetch(`/api/photos?limit=${PAGE_SIZE}&offset=${offset}`);
+	const data = await res.json();
+	totalPhotos = data.total;
+	// clamp if the page fell out of range (e.g. total shrank)
+	const pages = totalPages();
+	if (page > pages - 1) return fetchPhotos(pages - 1);
+	currentPage = page;
+	currentPhotos = data.items;
+	photoGrid.innerHTML = "";
+	currentPhotos.forEach((photo, index) => photoGrid.appendChild(buildTile(photo, index)));
+	renderPager();
+}
+
+function goToPage(page) {
+	const pages = totalPages();
+	const target = Math.min(Math.max(page, 0), pages - 1);
+	if (target === currentPage) return;
+	fetchPhotos(target);
+}
+
+pagePrev.addEventListener("click", () => goToPage(currentPage - 1));
+pageNext.addEventListener("click", () => goToPage(currentPage + 1));
+
+// During a transfer, download_done fires rapidly; rebuilding the grid on every
+// event thrashes in-flight requests (and some tiles never finish loading).
 // Coalesce into at most one refresh every few seconds, with a trailing refresh.
+// Only auto-refreshes the first page (newest frames); other pages and the open
+// lightbox are left undisturbed.
 let photoRefreshTimer = null;
 let photoRefreshPending = false;
 function schedulePhotoRefresh() {
+	if (currentPage !== 0 || !lightbox.hidden) return;
 	if (photoRefreshTimer) {
 		photoRefreshPending = true;
 		return;
 	}
-	fetchPhotos();
+	fetchPhotos(0);
 	photoRefreshTimer = setTimeout(() => {
 		photoRefreshTimer = null;
 		if (photoRefreshPending) {
