@@ -1,21 +1,52 @@
+import threading
 import time
 from datetime import datetime, timezone
 
 import requests
 
-from . import wifi
+from . import notify, wifi
 from .config import Settings
 from .imaging_edge import GetContentException, ImagingEdge
 from .state import AppState
 
+# Only one thing may drive the WiFi adapter at a time: a pairing run, or an
+# auto-scan presence check (whose `ip link down` would kill a join in progress).
+adapter_lock = threading.Lock()
+
 
 def run_pairing_flow(app_state: AppState, settings: Settings):
     """Runs synchronously on a worker thread (invoked via asyncio.to_thread)."""
+    with adapter_lock:
+        _run_pairing_flow(app_state, settings)
+
+
+def camera_visible(settings: Settings) -> bool:
+    """Auto-scan presence check. False when the adapter is busy with a pairing run
+    (that run is already dealing with the camera), the next tick just tries again."""
+    if not adapter_lock.acquire(blocking=False):
+        return False
+    try:
+        return wifi.camera_visible(settings.wifi_ssid, settings.wifi_interface)
+    finally:
+        adapter_lock.release()
+
+
+def _notify(app_state: AppState, settings: Settings, message: str):
+    error = notify.send_webhook(settings.webhook_url, f"[Camera Sync] {message}")
+    if error:
+        app_state.emit("warning", f"Webhook failed ({error})")
+
+
+def _run_pairing_flow(app_state: AppState, settings: Settings):
     app_state.counts.downloaded = 0
     app_state.counts.skipped = 0
     app_state.counts.seen = 0
     app_state.current_file = None
     app_state.last_error = None
+
+    # Webhook messages only go out for syncs that actually transfer something new,
+    # so a camera that stays in range (auto-scan) doesn't ping on every visit.
+    started = False
 
     try:
         app_state.state = "joining_wifi"
@@ -32,10 +63,14 @@ def run_pairing_flow(app_state: AppState, settings: Settings):
         ie = ImagingEdge(settings.camera_ip, settings.camera_port, settings.output_dir)
 
         def ie_callback(type_, message, current_file=None):
+            nonlocal started
             app_state.counts.downloaded = ie.downloaded
             app_state.counts.skipped = ie.skipped
             app_state.counts.seen = ie.seen
             app_state.emit(type_, message, current_file=current_file)
+            if type_ == "download_start" and not started:
+                started = True
+                _notify(app_state, settings, "Sync started, downloading new images.")
 
         ie.on_event = ie_callback
 
@@ -52,11 +87,15 @@ def run_pairing_flow(app_state: AppState, settings: Settings):
         app_state.state = "done"
         app_state.last_completed_at = datetime.now(timezone.utc).isoformat()
         app_state.emit("phase", f"Sync complete: {ie.downloaded} downloaded, {ie.skipped} skipped")
+        if started:
+            _notify(app_state, settings, f"Sync done: {ie.downloaded} downloaded, {ie.skipped} skipped.")
 
     except Exception as e:
         app_state.state = "error"
         app_state.last_error = str(e)
         app_state.emit("error", f"Sync failed: {e}")
+        if started:
+            _notify(app_state, settings, f"Sync failed: {e}")
 
     finally:
         try:

@@ -1,5 +1,6 @@
 import asyncio
-from contextlib import asynccontextmanager
+import logging
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 
 from fastapi import FastAPI, Form, HTTPException, Request
@@ -15,6 +16,36 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 BUSY_STATES = {"starting", "joining_wifi", "verifying_camera", "transferring"}
 
+logger = logging.getLogger("uvicorn.error")
+
+
+def _start_pairing(reason: str) -> bool:
+    """Marks the app busy and starts a sync in the background. False if one is already running."""
+    if app_state.state in BUSY_STATES:
+        return False
+    app_state.state = "starting"
+    app_state.emit("phase", reason)
+    asyncio.create_task(_run_pairing())
+    return True
+
+
+async def _run_pairing():
+    await asyncio.to_thread(sync_service.run_pairing_flow, app_state, settings)
+
+
+async def _auto_scan_loop():
+    interval = settings.auto_scan_interval_seconds
+    logger.info("Auto scan on: checking for the camera every %ss", interval)
+    while True:
+        if app_state.state not in BUSY_STATES:
+            try:
+                if await asyncio.to_thread(sync_service.camera_visible, settings):
+                    _start_pairing("Camera found, starting sync")
+            except Exception as e:
+                # misconfiguration (missing interface, no SSID, ...): keep going, retry next tick
+                logger.warning("Auto scan check failed: %s", e)
+        await asyncio.sleep(interval)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -26,7 +57,12 @@ async def lifespan(app: FastAPI):
             "the app will not start without them. See webapp/.env.example."
         )
     app_state.bind_loop(asyncio.get_running_loop())
+    scan_task = asyncio.create_task(_auto_scan_loop()) if settings.auto_scan_enabled else None
     yield
+    if scan_task:
+        scan_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await scan_task
 
 
 app = FastAPI(lifespan=lifespan)
@@ -85,16 +121,9 @@ async def get_status():
 
 @app.post("/api/pair")
 async def pair():
-    if app_state.state in BUSY_STATES:
+    if not _start_pairing("Pair requested"):
         raise HTTPException(status_code=409, detail="Sync already in progress")
-    app_state.state = "starting"
-    app_state.emit("phase", "Pair requested")
-    asyncio.create_task(_run_pairing())
     return JSONResponse(status_code=202, content={"status": "accepted"})
-
-
-async def _run_pairing():
-    await asyncio.to_thread(sync_service.run_pairing_flow, app_state, settings)
 
 
 @app.get("/api/events")
@@ -160,6 +189,7 @@ async def get_config():
         "camera_ip": settings.camera_ip,
         "camera_port": settings.camera_port,
         "wifi_ssid_masked": masked if ssid else "(not set)",
+        "auto_scan_seconds": settings.auto_scan_interval_seconds if settings.auto_scan_enabled else None,
     }
 
 

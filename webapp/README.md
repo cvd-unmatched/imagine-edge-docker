@@ -46,6 +46,9 @@ Built on top of the SOAP/UPnP protocol client in [`../imaging-edge.py`](../imagi
 | `WEBAPP_PASSWORD` | *(required, no default)* | Login password for the web UI. |
 | `WEBAPP_SECRET_KEY` | *(required, no default)* | Signs session cookies. Generate with `openssl rand -hex 32`. Changing it logs everyone out. |
 | `WEBAPP_PORT`    | `8000`                   | Port the app listens on. Change this (not `docker-compose.yml`) if `8000` is already taken on the homeserver, see "Port" below. |
+| `AUTO_SCAN_ENABLED` | `false`               | `true` to sync automatically without pressing Pair, see "Automatic sync and webhook" below. |
+| `AUTO_SCAN_INTERVAL_SECONDS` | `60`         | How often auto-scan checks whether the camera is in range. Minimum `10`, the app refuses to start below that. |
+| `WEBHOOK_URL`    | *(empty, off)*           | Discord or Slack-style incoming webhook that gets a message when a sync starts and finishes. |
 
 All three `WEBAPP_*` variables are required, the app's startup check refuses
 to run if any of them is empty, on purpose, so it can never silently come up
@@ -76,6 +79,27 @@ mounted at `/data/photos` in the container. It's the only stateful thing
 this app has, no database, back it up like you would any other photo
 library. Recreating the container (`docker compose up -d` after a pull)
 never touches it.
+
+## Automatic sync and webhook
+
+**Auto-scan** removes the Pair button press. Set `AUTO_SCAN_ENABLED=true` and
+every `AUTO_SCAN_INTERVAL_SECONDS` the app briefly scans for the camera's
+WiFi (the adapter is brought up, scanned, and put back down). When the
+camera is in range (turn on "Send to Smartphone" on it), the normal sync runs
+on its own. When it isn't, nothing happens: no error state, no UI flapping.
+The Pair button keeps working either way, and the header shows `AUTO 60s` or
+`AUTO off` so you can confirm the setting took effect. If the adapter or
+`WIFI_INTERFACE` isn't set up yet, each check logs a warning in
+`docker compose logs` and tries again next interval, it never crashes the app.
+
+**Webhook**: set `WEBHOOK_URL` to a Discord or Slack-style incoming webhook
+and you get a message when new images start downloading, and another when the
+sync is done (with the counts) or failed. A sync where everything is already
+on disk sends nothing, so a camera that stays in range doesn't ping you every
+interval. The URL contains a secret token, so treat it like a password: it's
+never shown in the UI or logs, and a failing webhook only adds a warning to
+the event log, it never breaks a sync. Other receivers that accept a JSON
+POST can work too, the body is `{"content": "...", "text": "..."}`.
 
 ## Host / Proxmox prerequisites (one-time)
 

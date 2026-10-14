@@ -13,6 +13,7 @@ const framesCount = document.getElementById("frames-count");
 const tmIface = document.getElementById("tm-iface");
 const tmCamera = document.getElementById("tm-camera");
 const tmSsid = document.getElementById("tm-ssid");
+const tmAuto = document.getElementById("tm-auto");
 const lightbox = document.getElementById("lightbox");
 const lightboxStage = document.getElementById("lightbox-stage");
 const lightboxName = document.getElementById("lightbox-name");
@@ -208,6 +209,7 @@ async function fetchConfig() {
 	tmIface.innerHTML = `IF <strong>${cfg.wifi_interface}</strong>`;
 	tmCamera.innerHTML = `CAM <strong>${cfg.camera_ip}:${cfg.camera_port}</strong>`;
 	tmSsid.innerHTML = `SSID <strong>${cfg.wifi_ssid_masked}</strong>`;
+	tmAuto.innerHTML = `AUTO <strong>${cfg.auto_scan_seconds ? cfg.auto_scan_seconds + "s" : "off"}</strong>`;
 }
 
 /* ============ lightbox ============ */

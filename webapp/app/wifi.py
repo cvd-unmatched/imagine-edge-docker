@@ -46,7 +46,7 @@ def _interface_is_wireless(iface: str) -> bool:
     return os.path.exists(f"/sys/class/net/{iface}/phy80211")
 
 
-def join(ssid: str, password: str, iface: str, emit: EmitFn, timeout: int = 30):
+def _check_interface(ssid: str, iface: str):
     if not ssid:
         raise WifiError("WIFI_SSID is not configured")
     if not _interface_exists(iface):
@@ -55,6 +55,32 @@ def join(ssid: str, password: str, iface: str, emit: EmitFn, timeout: int = 30):
         )
     if not _interface_is_wireless(iface):
         raise WifiError(f"Interface {iface} exists but is not a wireless interface.")
+
+
+def _scan_sees(ssid: str, iface: str) -> bool:
+    scan = subprocess.run(["iw", "dev", iface, "scan"], capture_output=True, text=True, timeout=15)
+    return ssid in (scan.stdout or "")
+
+
+def camera_visible(ssid: str, iface: str) -> bool:
+    """Is the camera's AP in range right now? Leaves the adapter down again afterwards.
+
+    Used by auto-scan. Callers must hold sync_service.adapter_lock so this never
+    runs while a pairing run is using the adapter.
+    """
+    _check_interface(ssid, iface)
+    subprocess.run(["rfkill", "unblock", "wifi"], capture_output=True)
+    subprocess.run(["ip", "link", "set", iface, "up"], check=True, capture_output=True)
+    try:
+        return _scan_sees(ssid, iface)
+    except subprocess.TimeoutExpired:
+        return False
+    finally:
+        subprocess.run(["ip", "link", "set", iface, "down"], capture_output=True)
+
+
+def join(ssid: str, password: str, iface: str, emit: EmitFn, timeout: int = 30):
+    _check_interface(ssid, iface)
 
     RUN_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -66,8 +92,7 @@ def join(ssid: str, password: str, iface: str, emit: EmitFn, timeout: int = 30):
 
     emit("wifi", f"Scanning for {ssid} (advisory)")
     try:
-        scan = subprocess.run(["iw", "dev", iface, "scan"], capture_output=True, text=True, timeout=15)
-        if ssid not in (scan.stdout or ""):
+        if not _scan_sees(ssid, iface):
             emit("warning", f"SSID {ssid} not seen in scan results, attempting to join anyway")
     except Exception as e:
         emit("warning", f"Scan failed (continuing anyway): {e}")
